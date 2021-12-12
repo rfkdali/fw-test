@@ -15,10 +15,11 @@ class FloorplansController < ApplicationController
 
   # POST /floorplans
   def create
-    @floorplan = Floorplan.new(floorplan_params)
+    missing_project && return unless project
 
+    @floorplan = Floorplan.new(floorplan_params)
     if @floorplan.save
-      render json: @floorplan, status: :created, location: @floorplan
+      render json: @floorplan, status: :created
     else
       render json: @floorplan.errors, status: :unprocessable_entity
     end
@@ -46,6 +47,17 @@ class FloorplansController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def floorplan_params
-      params.require(:floorplan).permit(:name, :project_id)
+      params.require(:floorplan).permit(:name, :main_image)
+        .merge(project_id: params[:project_id])
+    end
+
+    def project
+      @project ||= Project.find_by_id(params[:project_id])
+    end
+
+    def missing_project
+      render json: {
+        error: "Missing project id param"
+      }, status: :unprocessable_entity
     end
 end
